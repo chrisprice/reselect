@@ -1,3 +1,5 @@
+import Proxy from 'harmony-proxy'
+
 function defaultEqualityCheck(a, b) {
   return a === b
 }
@@ -82,4 +84,29 @@ export function createStructuredSelector(selectors, selectorCreator = createSele
       }, {})
     }
   )
+}
+
+export function createComputedSelector(resultFunc) {
+  let recomputations = 0
+  let dependencies = null
+  const selector = (state) => {
+
+    if (dependencies == null || )
+
+    let params = dependencies.map((dependency) => dependency(state))
+
+    const proxy = new Proxy(state, {
+      get: (target, key) => {
+        const accessor = (target) => target[key]
+        dependencies = [ ...dependencies, accessor ]
+        const value = accessor(target)
+        params = [ ...params, value ]
+        return value
+      }
+    })
+    recomputations++
+    return resultFunc(proxy)
+  }
+  selector.recomputations = () => recomputations
+  return selector
 }

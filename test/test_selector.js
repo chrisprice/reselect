@@ -1,13 +1,13 @@
 // TODO: Add test for React Redux connect function
 
 import chai from 'chai'
-import {  createSelector, createSelectorCreator, defaultMemoize, createStructuredSelector  } from '../src/index'
+import {  createSelector, createComputedSelector, createSelectorCreator, defaultMemoize, createStructuredSelector  } from '../src/index'
 import {  default as lodashMemoize  } from 'lodash.memoize'
 
 const assert = chai.assert
 
-suite('selector', () => { 
-  test('basic selector', () => { 
+suite('selector', () => {
+  test('basic selector', () => {
     const selector = createSelector(
       state => state.a,
         a => a
@@ -18,7 +18,17 @@ suite('selector', () => {
     assert.equal(selector({ a: 2 }), 2)
     assert.equal(selector.recomputations(), 2)
   })
-  test('basic selector multiple keys', () => { 
+  test('basic computed selector', () => {
+    const selector = createComputedSelector(
+      state => state.a
+    )
+    assert.equal(selector({ a: 1 }), 1)
+    assert.equal(selector({ a: 1 }), 1)
+    assert.equal(selector.recomputations(), 1)
+    assert.equal(selector({ a: 2 }), 2)
+    assert.equal(selector.recomputations(), 2)
+  })
+  test('basic selector multiple keys', () => {
     const selector = createSelector(
       state => state.a,
         state => state.b,
@@ -33,14 +43,14 @@ suite('selector', () => {
     assert.equal(selector(state2), 5)
     assert.equal(selector.recomputations(), 2)
   })
-  test('basic selector invalid input selector', () => { 
+  test('basic selector invalid input selector', () => {
     assert.throw(() => createSelector(
       state => state.a,
         'not a function',
       (a, b) => a + b
     ), /input-selectors to be functions.*function, string/)
   })
-  test('memoized composite arguments', () => { 
+  test('memoized composite arguments', () => {
     const selector = createSelector(
       state => state.sub,
         sub => sub
@@ -53,10 +63,10 @@ suite('selector', () => {
     assert.deepEqual(selector(state2), {  a: 2  })
     assert.equal(selector.recomputations(), 2)
   })
-  test('first argument can be an array', () => { 
+  test('first argument can be an array', () => {
     const selector = createSelector(
       [ state => state.a, state => state.b ],
-      (a, b) => { 
+      (a, b) => {
         return a + b
       }
     )
@@ -66,20 +76,20 @@ suite('selector', () => {
     assert.equal(selector({ a: 3, b: 2 }), 5)
     assert.equal(selector.recomputations(), 2)
   })
-  test('can accept props', () => { 
+  test('can accept props', () => {
     let called = 0
     const selector = createSelector(
       state => state.a,
       state => state.b,
       (state, props) => props.c,
-      (a, b, c) => { 
+      (a, b, c) => {
         called++
         return a + b + c
       }
     )
     assert.equal(selector({ a: 1, b: 2 }, { c: 100 }), 103)
   })
-  test('chained selector', () => { 
+  test('chained selector', () => {
     const selector1 = createSelector(
       state => state.sub,
         sub => sub
@@ -96,7 +106,7 @@ suite('selector', () => {
     assert.equal(selector2(state2), 2)
     assert.equal(selector2.recomputations(), 2)
   })
-  test('chained selector with props', () => { 
+  test('chained selector with props', () => {
     const selector1 = createSelector(
       state => state.sub,
         (state, props) => props.x,
@@ -115,7 +125,7 @@ suite('selector', () => {
     assert.equal(selector2(state2, { x: 100, y: 201 }), 303)
     assert.equal(selector2.recomputations(), 2)
   })
-  test('chained selector with variadic args', () => { 
+  test('chained selector with variadic args', () => {
     const selector1 = createSelector(
       state => state.sub,
         (state, props, another) => props.x + another,
@@ -134,7 +144,7 @@ suite('selector', () => {
     assert.equal(selector2(state2, { x: 100, y: 201 }, 200), 503)
     assert.equal(selector2.recomputations(), 2)
   })
-  test('override valueEquals', () => { 
+  test('override valueEquals', () => {
     // a rather absurd equals operation we can verify in tests
     const createOverridenSelector = createSelectorCreator(
       defaultMemoize,
@@ -150,10 +160,10 @@ suite('selector', () => {
     assert.equal(selector({ a: 'A' }), 'A')
     assert.equal(selector.recomputations(), 2)
   })
-  test('custom memoize', () => { 
+  test('custom memoize', () => {
     const hashFn = (...args) => args.reduce((acc, val) => acc + '-' + JSON.stringify(val))
     const customSelectorCreator = createSelectorCreator(
-      lodashMemoize, 
+      lodashMemoize,
       hashFn
     )
     const selector = customSelectorCreator(
@@ -172,9 +182,9 @@ suite('selector', () => {
     assert.equal(selector.recomputations(), 3)
     // TODO: Check correct memoize function was called
   })
-  test('exported memoize', () => { 
+  test('exported memoize', () => {
     let called = 0
-    const memoized = defaultMemoize(state => { 
+    const memoized = defaultMemoize(state => {
       called++
       return state.a
     })
@@ -192,12 +202,12 @@ suite('selector', () => {
     assert.equal(memoized(1, 2), 3)
     assert.equal(memoized(1), 1)
   })
-  test('exported memoize with valueEquals override', () => { 
+  test('exported memoize with valueEquals override', () => {
     // a rather absurd equals operation we can verify in tests
     let called = 0
     const valueEquals = (a, b) => typeof a === typeof b
     const memoized = defaultMemoize(
-      a => { 
+      a => {
         called++
         return a
       },
@@ -209,8 +219,8 @@ suite('selector', () => {
     assert.equal(memoized('A'), 'A')
     assert.equal(called, 2)
   })
-  test('structured selector', () => { 
-    const selector = createStructuredSelector({ 
+  test('structured selector', () => {
+    const selector = createStructuredSelector({
       x: state => state.a,
       y: state => state.b
     })
@@ -221,22 +231,22 @@ suite('selector', () => {
     assert.deepEqual(secondResult, { x: 2, y: 2 })
     assert.strictEqual(selector({ a: 2, b: 2 }), secondResult)
   })
-  test('structured selector with invalid arguments', () => { 
+  test('structured selector with invalid arguments', () => {
     assert.throw(() => createStructuredSelector(
       state => state.a,
       state => state.b
     ), /expects first argument to be an object.*function/)
-    assert.throw(() => createStructuredSelector({ 
+    assert.throw(() => createStructuredSelector({
       a: state => state.b,
       c: 'd'
     }), /input-selectors to be functions.*function, string/)
   })
-  test('structured selector with custom selector creator', () => { 
+  test('structured selector with custom selector creator', () => {
     const customSelectorCreator = createSelectorCreator(
       defaultMemoize,
       (a, b) => a === b
     )
-    const selector = createStructuredSelector({ 
+    const selector = createStructuredSelector({
       x: state => state.a,
       y: state => state.b
     }, customSelectorCreator)
